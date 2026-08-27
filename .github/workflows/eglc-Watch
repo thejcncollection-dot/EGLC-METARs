@@ -1,0 +1,61 @@
+name: EGLC METAR and TAF Watch
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  check-weather:
+    runs-on: ubuntu-latest
+    env:
+      CHECKWX_API_KEY: ${{ secrets.CHECKWX_API_KEY }}
+      NTFY_TOPIC: EGLC-METARs-JCN-VRG-5577
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Poll twice within this run
+        run: |
+          check_report() {
+            TYPE=$1        # "metar" or "taf"
+            LABEL=$2       # display title
+            STATEFILE="data/last_${TYPE}.txt"
+
+            curl -s -H "X-API-Key: $CHECKWX_API_KEY" \
+              "https://api.checkwx.com/v2/${TYPE}/EGLC" -o response.json
+
+            CURRENT=$(python3 -c "import json; d=json.load(open('response.json')); print(d['data'][0].strip() if d.get('data') else '')")
+
+            LAST=""
+            if [ -f "$STATEFILE" ]; then
+              LAST=$(cat "$STATEFILE")
+            fi
+
+            if [ "$CURRENT" != "$LAST" ] && [ -n "$CURRENT" ]; then
+              if [ -n "$LAST" ]; then
+                curl -s -d "$CURRENT" -H "Title: $LABEL" "https://ntfy.sh/$NTFY_TOPIC"
+              fi
+              echo "$CURRENT" > "$STATEFILE"
+              git add "$STATEFILE"
+            fi
+          }
+
+          mkdir -p data
+          for i in 1 2; do
+            check_report "metar" "EGLC METAR"
+            check_report "taf" "EGLC TAF"
+
+            if ! git diff --cached --quiet; then
+              git config user.name "metar-bot"
+              git config user.email "actions@github.com"
+              git commit -m "Update last reports"
+              git push
+            fi
+
+            if [ $i -eq 1 ]; then
+              sleep 150
+            fi
+          done
