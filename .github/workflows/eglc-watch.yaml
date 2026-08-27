@@ -1,8 +1,6 @@
 name: EGLC METAR and TAF Watch
 
 on:
-  schedule:
-    - cron: '*/5 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -17,11 +15,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Poll twice within this run
+      - name: Check METAR and TAF
         run: |
           check_report() {
-            TYPE=$1        # "metar" or "taf"
-            LABEL=$2       # display title
+            TYPE=$1
+            LABEL=$2
             STATEFILE="data/last_${TYPE}.txt"
 
             curl -s -H "X-API-Key: $CHECKWX_API_KEY" \
@@ -44,18 +42,12 @@ jobs:
           }
 
           mkdir -p data
-          for i in 1 2; do
-            check_report "metar" "EGLC METAR"
-            check_report "taf" "EGLC TAF"
+          check_report "metar" "EGLC METAR"
+          check_report "taf" "EGLC TAF"
 
-            if ! git diff --cached --quiet; then
-              git config user.name "metar-bot"
-              git config user.email "actions@github.com"
-              git commit -m "Update last reports"
-              git push
-            fi
-
-            if [ $i -eq 1 ]; then
-              sleep 150
-            fi
-          done
+          if ! git diff --cached --quiet; then
+            git config user.name "metar-bot"
+            git config user.email "actions@github.com"
+            git commit -m "Update last reports"
+            git push
+          fi
