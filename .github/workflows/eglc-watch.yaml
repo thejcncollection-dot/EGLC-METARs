@@ -1,4 +1,4 @@
-name: EGLC METAR and TAF Watch
+name: EGLC Weather Watch
 
 on:
   workflow_dispatch:
@@ -10,7 +10,6 @@ jobs:
   check-weather:
     runs-on: ubuntu-latest
     env:
-      CHECKWX_API_KEY: ${{ secrets.CHECKWX_API_KEY }}
       NTFY_TOPIC: EGLC-METARs-JCN-VRG-5577
     steps:
       - uses: actions/checkout@v4
@@ -22,10 +21,8 @@ jobs:
             LABEL=$2
             STATEFILE="data/last_${TYPE}.txt"
 
-            curl -s -H "X-API-Key: $CHECKWX_API_KEY" \
-              "https://api.checkwx.com/v2/${TYPE}/EGLC" -o response.json
-
-            CURRENT=$(python3 -c "import json; d=json.load(open('response.json')); print(d['data'][0].strip() if d.get('data') else '')")
+            CURRENT=$(curl -s -H "Accept: text/plain" \
+              "https://aviationweather.gov/api/data/${TYPE}?ids=EGLC&format=raw")
 
             LAST=""
             if [ -f "$STATEFILE" ]; then
