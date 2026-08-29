@@ -1,7 +1,1 @@
-<html>
-<head><title>504 Gateway Time-out</title></head>
-<body>
-<center><h1>504 Gateway Time-out</h1></center>
-<hr><center>Microsoft-Azure-Application-Gateway/v2</center>
-</body>
-</html>
+METAR EGLC 291620Z AUTO 21014KT 180V240 9999 BKN017/// BKN021/// //////TCU 20/17 Q1000
