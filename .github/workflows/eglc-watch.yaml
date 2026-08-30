@@ -21,15 +21,21 @@ jobs:
             LABEL=$2
             STATEFILE="data/last_${TYPE}.txt"
 
-            CURRENT=$(curl -s -H "Accept: text/plain" \
+            CURRENT=$(curl -s --max-time 15 -H "Accept: text/plain" \
+              -H "User-Agent: eglc-weather-watch (personal project)" \
               "https://aviationweather.gov/api/data/${TYPE}?ids=EGLC&format=raw")
+
+            if ! echo "$CURRENT" | grep -qE "^(METAR|TAF) EGLC"; then
+              echo "Fetch for $TYPE looked invalid, skipping this cycle: $CURRENT"
+              return
+            fi
 
             LAST=""
             if [ -f "$STATEFILE" ]; then
               LAST=$(cat "$STATEFILE")
             fi
 
-            if [ "$CURRENT" != "$LAST" ] && [ -n "$CURRENT" ]; then
+            if [ "$CURRENT" != "$LAST" ]; then
               if [ -n "$LAST" ]; then
                 curl -s -d "$CURRENT" -H "Title: $LABEL" "https://ntfy.sh/$NTFY_TOPIC"
               fi
