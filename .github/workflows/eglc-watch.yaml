@@ -21,9 +21,12 @@ jobs:
             LABEL=$2
             STATEFILE="data/last_${TYPE}.txt"
 
-            CURRENT=$(curl -s --max-time 15 -H "Accept: text/plain" \
+            CURRENT=$(curl -s --max-time 15 \
+              -H "Accept: text/plain" \
+              -H "Cache-Control: no-cache" \
+              -H "Pragma: no-cache" \
               -H "User-Agent: eglc-weather-watch (personal project)" \
-              "https://aviationweather.gov/api/data/${TYPE}?ids=EGLC&format=raw")
+              "https://aviationweather.gov/api/data/${TYPE}?ids=EGLC&format=raw&_=$(date +%s)")
 
             if ! echo "$CURRENT" | grep -qE "^(METAR|TAF) EGLC"; then
               echo "Fetch for $TYPE looked invalid, skipping this cycle: $CURRENT"
