@@ -26,7 +26,9 @@ jobs:
               -H "Cache-Control: no-cache" \
               -H "Pragma: no-cache" \
               -H "User-Agent: eglc-weather-watch (personal project)" \
-              "https://aviationweather.gov/api/data/${TYPE}?ids=EGLC&format=raw")
+              "https://aviationweather.gov/api/data/${TYPE}?ids=EGLC&format=raw&hoursBeforeNow=1&mostRecent=true")
+
+            echo "[$TYPE] Fetched at $(date -u): $CURRENT"
 
             if ! echo "$CURRENT" | grep -qE "^(METAR|TAF) EGLC"; then
               echo "Fetch for $TYPE looked invalid, skipping this cycle: $CURRENT"
